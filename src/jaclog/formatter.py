@@ -52,7 +52,7 @@ class Formatter(logging.Formatter):
     head2 = _color_rgb(f'[{record.filename}] {record.funcName}', siteColor[1])
     head = f'{head1} {head2}'
 
-    message = super().format(record)
+    message = super().format(record).strip()
 
     continued = (head == self.lastHead[0])
     self.lastHead = (head, time())
@@ -65,7 +65,7 @@ class Formatter(logging.Formatter):
       if continued:
         loglines = f'\n{message}'
       else:
-        loglines = f'\n{headLine}{message}'
+        loglines = f'\n{headLine}\n{message}'
 
     # compact layout
     else:
@@ -76,18 +76,12 @@ class Formatter(logging.Formatter):
         line, otherwise print headline and message line(s) in separate lines.
       '''
 
-      oneliner = f'{head} {message}'
-      if '\n' not in message and                       \
-              screen.screenWidth(oneliner) <= 100 and  \
-              not continued:
-        loglines = oneliner
+      message = textwrap.indent(message, '\x20' * 2)
+      if continued:
+        message = _color_rgb('·\x20', _colors['delimiter'][0]) + message[2:]
+        loglines = message
       else:
-        message = textwrap.indent(message, '\x20' * 2)
-        if continued:
-          message = _color_rgb('·', _colors['delimiter'][0]) + message[2:]
-          loglines = message
-        else:
-          loglines = f'{head} {message}'
+        loglines = f'{head}\n{message}'
 
     # indent 1 space for the sake of aesthetic
     loglines = textwrap.indent(loglines, '\x20')
