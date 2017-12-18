@@ -22,8 +22,9 @@ _colors = {
     logging.WARNING: ((255, 87, 191), (255, 255, 255)),
     logging.INFO: ((255, 224, 102), (255, 255, 255)),
     logging.DEBUG: ((64, 255, 64), (255, 255, 255)),
+
     'fileFuncName': ((155, 155, 155), (130, 130, 130)),
-    # 'time_sep': ((130, 130, 130), (70, 70, 70)),
+    'delimiter': ((130, 130, 130), (70, 70, 70)),
 }
 
 
@@ -37,7 +38,6 @@ class Formatter(logging.Formatter):
   def __init__(self, compact):
     super().__init__()
     self.compact = compact
-
     # (symbol + fileFuncName, relative msec since this module loaded)
     self.lastHead = ('', 0)
 
@@ -65,7 +65,7 @@ class Formatter(logging.Formatter):
       if continued:
         loglines = f'\n{message}'
       else:
-        loglines = f'\n{headLine}\n{message}'
+        loglines = f'\n{headLine}{message}'
 
     # compact layout
     else:
@@ -77,13 +77,17 @@ class Formatter(logging.Formatter):
       '''
 
       oneliner = f'{head} {message}'
-      if '\n' not in message and                      \
-              screen.screenWidth(oneliner) <= 78 and  \
+      if '\n' not in message and                       \
+              screen.screenWidth(oneliner) <= 100 and  \
               not continued:
         loglines = oneliner
       else:
         message = textwrap.indent(message, '\x20' * 2)
-        loglines = f'{head}\n{message}'
+        if continued:
+          message = _color_rgb('·', _colors['delimiter'][0]) + message[2:]
+          loglines = message
+        else:
+          loglines = f'{head} {message}'
 
     # indent 1 space for the sake of aesthetic
     loglines = textwrap.indent(loglines, '\x20')
