@@ -6,7 +6,7 @@ from pathlib import Path
 from jaclog.jaclog import configure
 
 
-def test_configure():
+def main_test():
   appName = 'test_jaclog'
   fileName = 'test.log'
 
