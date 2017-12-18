@@ -3,11 +3,11 @@
 
 from pathlib import Path
 
-from jacklog.jacklog import configure
+from jaclog.jaclog import configure
 
 
 def test_configure():
-  appName = 'test_jacklog'
+  appName = 'test_jaclog'
   fileName = 'test.log'
 
   p = Path(f'~/.local/share/{appName}/log/{fileName}').expanduser()

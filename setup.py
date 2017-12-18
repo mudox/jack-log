@@ -10,13 +10,13 @@ from setuptools import find_packages, setup
 
 version = re.search(
     r"^__version__\s*=\s*'(.*)'",
-    open('src/jacklog/jacklog.py').read(),
+    open('src/jaclog/jaclog.py').read(),
     re.M
 ).group(1)
 
 
 setup(
-    name='jacklog',
+    name='jaclog',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
@@ -25,5 +25,5 @@ setup(
     long_description='TBD',
     author='Mudox',
     author_email='imudox@gmail.com',
-    url='https://github.com/mudox/jacklog'
+    url='https://github.com/mudox/jaclog'
 )
