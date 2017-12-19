@@ -10,7 +10,13 @@ from .formatter import Formatter
 __version__ = '1.0.0'
 
 
-def configure(appName, fileName, logTTY=None, compact=False):
+def configure(
+    appName: 'jacklog will create f"~/.local/share/{appName}/log" automaticall',
+    fileName: 'the name of log file that will be created',
+    logTTY: 'specified tty file to log directly to the corresponding terminal' = None,
+    compact: 'compact relayout mode, less separating empty lines' = False,
+    interval: 'time limit to add a time line in milliseconds. (default 2s)' = 2000
+):
   lines = f'------------ {datetime.datetime.now()} ------------'
   lines = f'\n{lines}\n' if compact else f'\n\n{lines}\n\n'
 
@@ -22,7 +28,7 @@ def configure(appName, fileName, logTTY=None, compact=False):
   logFile.parent.mkdir(parents=True, exist_ok=True)
 
   logToFile = logging.FileHandler(logFile)
-  logToFile.setFormatter(Formatter(compact))
+  logToFile.setFormatter(Formatter(compact, interval))
   rootLogger.addHandler(logToFile)
 
   with logFile.open('a') as file:
@@ -31,7 +37,7 @@ def configure(appName, fileName, logTTY=None, compact=False):
   # log to tty if any
   if logTTY is not None:
     logToTTY = logging.FileHandler(logTTY)
-    logToTTY.setFormatter(Formatter(compact))
+    logToTTY.setFormatter(Formatter(compact, interval))
     rootLogger.addHandler(logToTTY)
 
     with open(logTTY, 'w') as file:

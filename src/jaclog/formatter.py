@@ -3,11 +3,16 @@
 
 import logging
 import textwrap
-from time import time
+from datetime import timedelta
+from typing import NamedTuple
 
-from . import screen
+
+class _Last(NamedTuple):
+  head: str
+  relativeCreated: int  # in milliseconds
 
 # TODO!!!: make symbols and colors configurable
+
 
 _symbols = {
     logging.ERROR: ' ',
@@ -28,18 +33,20 @@ _colors = {
 }
 
 
-def _color_rgb(text, rgb):
+def _sgrRGB(text, rgb):
   r, g, b = rgb
   return f'\033[38;2;{r};{g};{b}m{text}\033[0m'
 
 
 class Formatter(logging.Formatter):
 
-  def __init__(self, compact):
+  def __init__(self, compact, interval=2000):
     super().__init__()
-    self.compact = compact
-    # (symbol + fileFuncName, relative msec since this module loaded)
-    self.lastHead = ('', 0)
+
+    self._compact = compact
+    self._interval = interval
+
+    self._last = _Last(head='', relativeCreated=0)
 
   def format(self, record):
     symbolColor = _colors[record.levelno]
@@ -48,24 +55,40 @@ class Formatter(logging.Formatter):
     symbol = _symbols[record.levelno]
     subsystem = (record.name == '__main__') and 'main' or record.name
 
-    head1 = _color_rgb(f'{symbol}{subsystem}', symbolColor[0])
-    head2 = _color_rgb(f'[{record.filename}] {record.funcName}', siteColor[1])
+    head1 = _sgrRGB(f'{symbol}{subsystem}', symbolColor[0])
+    head2 = _sgrRGB(f'[{record.filename}] {record.funcName}', siteColor[1])
     head = f'{head1} {head2}'
 
     message = super().format(record).strip()
 
-    continued = (head == self.lastHead[0])
-    self.lastHead = (head, time())
+    # continued ?
+    continued = (head == self._last.head)
+
+    # time line ?
+    milliseconds = record.relativeCreated - self._last.relativeCreated
+    if milliseconds > self._interval:
+      timeLine = f'\x20\x20─── {timedelta(milliseconds=milliseconds)} elapsed'
+      timeLine = _sgrRGB(timeLine, _colors['delimiter'][0])
+    else:
+      timeLine = None
+
+    self._last = _Last(head=head, relativeCreated=record.relativeCreated)
 
     # regular relayout
-    if not self.compact:
+    if not self._compact:
       headLine = head
       message = textwrap.indent(message, '\x20' * 2)
 
       if continued:
-        loglines = f'\n{message}'
+        if timeLine is not None:
+          loglines = f'\n{timeLine}\n\n{message}'
+        else:
+          loglines = f'\n{message}'
       else:
-        loglines = f'\n{headLine}\n{message}'
+        if timeLine is not None:
+          loglines = f'\n{timeLine}\n\n{headLine}\n{message}'
+        else:
+          loglines = f'\n{headLine}\n{message}'
 
     # compact layout
     else:
@@ -78,7 +101,7 @@ class Formatter(logging.Formatter):
 
       message = textwrap.indent(message, '\x20' * 2)
       if continued:
-        message = _color_rgb('·\x20', _colors['delimiter'][0]) + message[2:]
+        message = _sgrRGB('·\x20', _colors['delimiter'][0]) + message[2:]
         loglines = message
       else:
         loglines = f'{head}\n{message}'
