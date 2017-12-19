@@ -8,11 +8,12 @@ from time import sleep
 from faker import Faker
 from jaclog import jaclog
 
-jaclog.configure(appName='test_jaclog', fileName='test.log', compact=False)
+jaclog.configure(appName='test_jaclog', fileName='test.log', compact=True)
 faker = Faker()
 
+lastLogFunction = None
 while True:
-  sleep(random.randrange(0, 37) / 10)
+  sleep(random.randrange(0, 19) / 10)
 
   subsystem = '.'.join(faker.words(nb=random.randrange(1, 4)))
   logger = logging.getLogger(subsystem)
@@ -25,4 +26,9 @@ while True:
   for _ in range(lineCount):
     lines += '\n' + faker.sentence(nb_words=7)
 
-  log(lines)
+  if random.randrange(4) == 0 and lastLogFunction is not None:
+    lastLogFunction(lines)
+  else:
+    lastLogFunction = log
+    log(lines)
+
