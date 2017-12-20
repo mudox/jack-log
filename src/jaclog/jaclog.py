@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import re
 from datetime import datetime, timedelta
+from os.path import getmtime
 from pathlib import Path
+from time import time
 
 from .formatter import Formatter
 
@@ -26,6 +27,8 @@ def configure(
   # log to file
   logFile = Path(f'~/.local/share/{appName}/log/{fileName}').expanduser()
   logFile.parent.mkdir(parents=True, exist_ok=True)
+  if not logFile.exists():  # avoid change mtime if file exists
+    logFile.touch(exist_ok=True)
 
   logToFile = logging.FileHandler(logFile)
   logToFile.setFormatter(Formatter(compact, eventInterval))
@@ -42,23 +45,19 @@ def configure(
 
 def _logSessionLine(logFile, tty, interval, compact):
   lines = f'\x20{datetime.now()}\x20'.center(100, '·')
-  lines = f'\n{lines}\n' if compact else f'\n\n{lines}\n\n'
+  lines = f'{lines}\n' if compact else f'\n\n{lines}\n\n'
 
   # time separator
-  text = logFile.read_text()
-  matches = re.findall(r'·+ ([0-9-:. ]+) ·+', text)
+  modifiedTime = getmtime(logFile)
+  seconds = time() - modifiedTime
+  if seconds > interval:
+    timeLine = f'{timedelta(seconds=seconds)} elapsed'
+    timeLine = timeLine.center(100)
+    timeLine = f'\n{timeLine}\n\n'
 
-  if matches is not None:
-    date = datetime.strptime(matches[-1], '%Y-%m-%d %H:%M:%S.%f')
-    seconds = (datetime.now() - date).total_seconds()
-    if seconds > interval:
-      timeLine = f'{timedelta(seconds=seconds)} elapsed'
-      timeLine = timeLine.center(100)
-      timeLine = f'\n\n{timeLine}\n\n'
-      timeLine = f'\x1b[38;5;242m{timeLine}\x1b[0m'
+    lines = f'{timeLine}{lines}'
 
-      lines = f'{timeLine}{lines}'
-
+  lines = f'\x1b[38;5;242m{lines}\x1b[0m'
   with logFile.open('a') as file:
     file.write(lines)
 
