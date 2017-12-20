@@ -110,7 +110,7 @@ class Formatter(logging.Formatter):
     message = textwrap.indent(self._message, '\x20' * self._bodyIndent)
 
     if self._inOneLine:
-      lines = f'{self._head}{message[self._bodyIndent:]}'
+      lines = f'{self._head}\x20{message[self._bodyIndent:]}'
     else:
       if self._head == self._last.head:
         # continue line symbol
