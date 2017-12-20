@@ -29,8 +29,6 @@ try:
     lines = lines.strip()
     kind = input('kind of message content [c|o|mo|co|cmo]:')
 
-    print(f'>> org lines:\n{lines}')
-
     if kind == 'o':
       lines = 'o:  🦁  [o]'
       continued = False
@@ -57,8 +55,6 @@ try:
         ['bare one liner', 'multiline one liner', 'normal'],
         weights=[2, 5, 7]
     )[0]
-
-    print(f'>> lines:\n{lines}')
 
     if continued:
       log = lastLogFunction
