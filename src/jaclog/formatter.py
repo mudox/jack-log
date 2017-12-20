@@ -47,8 +47,13 @@ class Formatter(logging.Formatter):
     self._interval = interval
 
     self._last = _Last(head='', relativeCreated=0)
+    self._msgIndent = 1
+    self._bodyIndent = 2
 
   def format(self, record):
+    self._record = record
+
+    # self._head
     symbolColor = _colors[record.levelno]
     siteColor = _colors['fileFuncName']
 
@@ -57,55 +62,71 @@ class Formatter(logging.Formatter):
 
     head1 = _sgrRGB(f'{symbol}{subsystem}', symbolColor[0])
     head2 = _sgrRGB(f'[{record.filename}] {record.funcName}', siteColor[1])
-    head = f'{head1} {head2}'
+    self._head = f'{head1} {head2}'
 
-    message = super().format(record).strip()
+    # self._message
+    self._message = super().format(record).strip()
 
-    # continued ?
-    continued = (head == self._last.head)
+    # self._inOneLine
+    if self._message.startswith('o:'):
+      self._inOneLine = True
+      self._message = self._message[2:]
+    else:
+      self._inOneLine = False
 
+    # format
+    if not self._compact:
+      lines = self._formatRegularly()
+    else:
+      lines = self._formatCompactly()
+
+    self._last = _Last(
+        head=self._head,
+        relativeCreated=record.relativeCreated
+    )
+
+    # indent 1 space for the sake of aesthetic
+    lines = textwrap.indent(lines, '\x20' * self._msgIndent)
+    return lines
+
+  def _formatRegularly(self):
+    headLine = self._head
+    message = textwrap.indent(self._message, '\x20' * self._bodyIndent)
+
+    if self._head == self._last.head:
+      if self._timeLine is not None:
+        lines = f'\n{self._timeLine}\n\n{message}'
+      else:
+        lines = f'\n{message}'
+    else:
+      if self._timeLine is not None:
+        lines = f'\n{self._timeLine}\n\n{headLine}\n{message}'
+      else:
+        lines = f'\n{headLine}\n{message}'
+
+    return lines
+
+  def _formatCompactly(self):
+    message = textwrap.indent(self._message, '\x20' * self._bodyIndent)
+    print(message)
+
+    if self._inOneLine:
+      lines = f'{self._head}{message[self._bodyIndent:]}'
+    else:
+      if self._head == self._last.head:
+        # continue line symbol
+        message = _sgrRGB('·\x20', _colors['delimiter'][0]) + message[2:]
+        lines = message
+      else:
+        lines = f'{self._head}\n{message}'
+
+    return lines
+
+  def _timeLine(self):
     # time line ?
-    milliseconds = record.relativeCreated - self._last.relativeCreated
+    milliseconds = self._record.relativeCreated - self._last.relativeCreated
     if milliseconds > self._interval:
       timeLine = f'\x20\x20─── {timedelta(milliseconds=milliseconds)} elapsed'
       timeLine = _sgrRGB(timeLine, _colors['delimiter'][0])
     else:
       timeLine = None
-
-    self._last = _Last(head=head, relativeCreated=record.relativeCreated)
-
-    # regular relayout
-    if not self._compact:
-      headLine = head
-      message = textwrap.indent(message, '\x20' * 2)
-
-      if continued:
-        if timeLine is not None:
-          loglines = f'\n{timeLine}\n\n{message}'
-        else:
-          loglines = f'\n{message}'
-      else:
-        if timeLine is not None:
-          loglines = f'\n{timeLine}\n\n{headLine}\n{message}'
-        else:
-          loglines = f'\n{headLine}\n{message}'
-
-    # compact layout
-    else:
-      '''
-      logic:
-        If the message is one-liner, and the screen width of the
-        `f'{head} {message}` does not exceed given limit, then log out in one
-        line, otherwise print headline and message line(s) in separate lines.
-      '''
-
-      message = textwrap.indent(message, '\x20' * 2)
-      if continued:
-        message = _sgrRGB('·\x20', _colors['delimiter'][0]) + message[2:]
-        loglines = message
-      else:
-        loglines = f'{head}\n{message}'
-
-    # indent 1 space for the sake of aesthetic
-    loglines = textwrap.indent(loglines, '\x20')
-    return loglines
