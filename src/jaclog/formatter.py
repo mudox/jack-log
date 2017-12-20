@@ -108,7 +108,6 @@ class Formatter(logging.Formatter):
 
   def _formatCompactly(self):
     message = textwrap.indent(self._message, '\x20' * self._bodyIndent)
-    print(message)
 
     if self._inOneLine:
       lines = f'{self._head}{message[self._bodyIndent:]}'
