@@ -62,5 +62,12 @@ def _logSessionLine(logFile, tty, interval, compact):
     file.write(lines)
 
   if tty is not None:
-    with tty.open('a') as file:
-      file.write(lines)
+    if isinstance(tty, Path):
+      with tty.open('a') as file:
+        file.write(lines)
+    elif isinstance(tty, str):
+      with open(tty, 'a') as file:
+        file.write(lines)
+    else:
+      raise RuntimeError(
+          'argument `tty` must be either of type `Path` or `str`')
