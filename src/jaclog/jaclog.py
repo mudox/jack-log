@@ -68,19 +68,23 @@ def configure(
     logToTTY.setFormatter(Formatter(compact, eventInterval))
     rootLogger.addHandler(logToTTY)
 
-  _logSessionLine(logFile, logTTY, interval=sessionInterval, compact=compact)
+  _logSessionLine(
+      logFile,
+      logTTY,
+      interval=sessionInterval,
+      compact=compact)
 
 
 def _logSessionLine(logFile, tty, interval, compact):
-  lines = f'\x20{datetime.now()}\x20'.center(100, '·')
+  cmd = basename('\x20'.join(argv))
+  lines = f'\x20 {datetime.now()}: {cmd}'
   lines = f'{lines}\n' if compact else f'\n\n{lines}\n\n'
 
   # time separator
   modifiedTime = getmtime(logFile)
   seconds = time() - modifiedTime
   if seconds > interval:
-    timeLine = f'{timedelta(seconds=seconds)} elapsed'
-    timeLine = timeLine.center(100)
+    timeLine = f'   [{timedelta(seconds=seconds)}] elapsed ...'
     timeLine = f'\n{timeLine}\n\n'
 
     lines = f'{timeLine}{lines}'
