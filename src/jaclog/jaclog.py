@@ -1,15 +1,17 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import logging
 from datetime import datetime, timedelta
-from os.path import getmtime
+from os.path import basename, getmtime
 from pathlib import Path
+from sys import argv
 from time import time
 
 from .formatter import Formatter
+from .screen import sgr
+from .settings import colors, margin, symbols, symbolWidth
 
-__version__ = '1.0.0'
+__version__ = '1.2'
 
 
 def configure(
@@ -76,30 +78,39 @@ def configure(
 
 
 def _logSessionLine(logFile, tty, interval, compact):
+  launchSymbol = f'{symbols["launch"]:{symbolWidth}}'
+  launchSymbol = sgr(launchSymbol, colors['launch'])
+
+  timestamp = sgr(str(datetime.now()), colors['time'])
+
   cmd = basename('\x20'.join(argv))
-  lines = f'\x20 {datetime.now()}: {cmd}'
-  lines = f'{lines}\n' if compact else f'\n\n{lines}\n\n'
+  cmd = sgr(cmd, colors['launch'])
+
+  launchLine = f'\x20{launchSymbol}{timestamp} {cmd}'
+  launchLine = f'\n{launchLine}\n\n' if compact else f'\n\n{launchLine}\n\n'
 
   # time separator
   modifiedTime = getmtime(logFile)
   seconds = time() - modifiedTime
   if seconds > interval:
-    timeLine = f'   [{timedelta(seconds=seconds)}] elapsed ...'
-    timeLine = f'\n{timeLine}\n\n'
+    indent = margin + symbolWidth
+    timeLine = ('·' * indent) + f'[ {timedelta(seconds=seconds)} ]'
+    timeLine = sgr(timeLine, colors['time'])
+    timeLine = f'\n{timeLine}\n'
 
-    lines = f'{timeLine}{lines}'
+    launchLine = f'{timeLine}{launchLine}'
 
-  lines = f'\x1b[38;5;242m{lines}\x1b[0m'
+  launchLine = f'\x1b[38;5;242m{launchLine}\x1b[0m'
   with logFile.open('a') as file:
-    file.write(lines)
+    file.write(launchLine)
 
   if tty is not None:
     if isinstance(tty, Path):
       with tty.open('a') as file:
-        file.write(lines)
+        file.write(launchLine)
     elif isinstance(tty, str):
       with open(tty, 'a') as file:
-        file.write(lines)
+        file.write(launchLine)
     else:
       raise RuntimeError(
           'argument `tty` must be either of type `Path` or `str`')
