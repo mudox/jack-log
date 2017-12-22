@@ -17,13 +17,19 @@ version = re.search(
 
 setup(
     name='jaclog',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    include_package_data=True,
     version=version,
+
     description='TBD',
     long_description='TBD',
+
     author='Mudox',
     author_email='imudox@gmail.com',
     url='https://github.com/mudox/jaclog'
+
+    package_dir={'': 'src'},
+    packages=find_packages('src'),
+
+    package_data={
+        '': ['resources/*'],
+    },
 )
