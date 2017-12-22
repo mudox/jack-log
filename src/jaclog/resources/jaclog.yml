@@ -1,0 +1,48 @@
+version: 1
+
+symbols:
+
+  symbolWidth: 2
+
+  use: nerd
+
+  schemes:
+
+    nerd:
+      error   : 
+      warning : 
+      info    : 
+      debug   : 
+      launch  : 
+
+    emoji:
+      error   : 😡
+      warning : 👿
+      info    : 💡
+      debug   : 🌱
+      launch  : 🚀
+
+colors:
+
+  use: basic
+
+  schemes:
+
+    basic:
+      error   : red
+      warning : magenta
+      info    : yellow
+      debug   : green
+      launch  : cyan
+      time    : 242
+      file    : 242
+
+    colorful:
+      error   : 200, 0, 0
+      warning : 255, 87, 191
+      info    : 255, 224, 102
+      debug   : 64, 255, 64
+      launch  : 33
+      time    : 242
+      file    : 242
+
