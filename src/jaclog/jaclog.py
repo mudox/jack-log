@@ -13,13 +13,41 @@ __version__ = '1.0.0'
 
 
 def configure(
-    appName: 'jacklog will create f"~/.local/share/{appName}/log" automaticall',
-    fileName: 'the name of log file that will be created',
-    logTTY: 'specified tty file to log directly to the corresponding terminal' = None,
-    compact: 'compact relayout mode, less separating empty lines' = False,
-    eventInterval: 'time limit to add a time line in milliseconds. (default 2s)' = 2000,
-    sessionInterval: 'time limit to add a session time line in seconds' = 5
+    appName,
+    fileName=None,
+    logTTY=None,
+    compact=True,
+    eventInterval=2000,
+    sessionInterval=5,
+    wrap=None
 ):
+  """ Configure logging system.
+
+  Arguments:
+
+    appName (str): jacklog will create f"~/.local/share/{appName}/log"
+      automaticall,
+
+    fileName (str): the name of log file that will be created, defaults to
+      `{appName}.log`
+
+    tty (Path or str): specified tty file to log directly to the corresponding
+      terminal.
+
+    compact (bool): compact relayout mode, less separating empty lines,
+      defaults to False.
+
+    eventInterval (int): time limit to add a time line in milliseconds.
+      default to 2s.
+
+    sessionInterval (int): time limit to add a session time line in seconds,
+      defaults to 5s.
+
+    wrap (int): textwrap maximum width, default to not wrap text.
+  """
+
+  if fileName is None:
+    fileName = f'{appName}.log'
 
   rootLogger = logging.getLogger()
   rootLogger.setLevel(logging.NOTSET)
