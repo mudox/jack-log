@@ -29,7 +29,7 @@ symbols:
       info     :       
       debug    :       
 
-      error+   :       ·
+      error+   :       
       warning+ :       ·
       info+    :       ·
       debug+   :       ·

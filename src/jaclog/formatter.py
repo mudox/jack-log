@@ -5,12 +5,13 @@ import textwrap
 from datetime import timedelta
 from typing import NamedTuple
 
-from .screen import sgr
+from . import screen
 from .settings import settings as cfg
 
 
 class _Last(NamedTuple):
-  head: str
+  subsystem: str
+  fileFunc: str
   relativeCreated: int  # in milliseconds
 
 
@@ -22,7 +23,11 @@ class Formatter(logging.Formatter):
     self._compact = compact
     self._interval = interval
 
-    self._last = _Last(head='', relativeCreated=0)
+    self._last = _Last(
+        subsystem='',
+        fileFunc='',
+        relativeCreated=0
+    )
 
   def _symbol(self):
     return cfg.symbols[self._record.levelname.lower()]
@@ -33,16 +38,30 @@ class Formatter(logging.Formatter):
   def _symbolColor(self):
     return cfg.colors[self._record.levelname.lower()]
 
+  def _subsystem(self):
+    if self._record.name == '__main__':
+      return 'main'
+    else:
+      return self._record.name
+
+  def _fileFunc(self):
+    return f'[{self._record.filename}] {self._record.funcName}'
+
   def format(self, record):
     self._record = record
 
+    self._isContinued = \
+        self._subsystem() == self._last.subsystem and \
+        self._fileFunc() == self._last.fileFunc
+
     # self._head
-    siteColor = cfg.colors['file']
+    head1 = self._symbol().ljust(cfg.symbolWidth)
+    head1 += self._subsystem()
+    head1 = screen.sgr(head1, self._symbolColor())
 
-    subsystem = (record.name == '__main__') and 'main' or record.name
+    head2 = self._fileFunc()
+    head2 = screen.sgr(head2, cfg.colors['file'])
 
-    head1 = sgr(f'{self._symbol():{cfg.symbolWidth}}{subsystem}', self._symbolColor())
-    head2 = sgr(f'[{record.filename}] {record.funcName}', siteColor)
     self._head = f'{head1} {head2}'
 
     # self._message
@@ -62,7 +81,8 @@ class Formatter(logging.Formatter):
       lines = self._formatCompactly()
 
     self._last = _Last(
-        head=self._head,
+        subsystem=self._subsystem(),
+        fileFunc=self._fileFunc(),
         relativeCreated=record.relativeCreated
     )
 
@@ -74,7 +94,7 @@ class Formatter(logging.Formatter):
     headLine = self._head
     message = textwrap.indent(self._message, '\x20' * cfg.symbolWidth)
 
-    if self._head == self._last.head:
+    if self._isContinued:
       if self._timeLine is not None:
         lines = f'\n{self._timeLine}\n\n{message}'
       else:
@@ -93,8 +113,8 @@ class Formatter(logging.Formatter):
     if self._inOneLine:
       lines = f'{self._head}\x20{message[cfg.symbolWidth:]}'
     else:
-      if self._head == self._last.head:
-        message = sgr(f'{self._continuedSymbol()}\x20', self._symbolColor()) + message[2:]
+      if self._isContinued:
+        message = screen.sgr(f'{self._continuedSymbol()}\x20', self._symbolColor()) + message[2:]
         lines = message
       else:
         lines = f'{self._head}\n{message}'
@@ -106,6 +126,6 @@ class Formatter(logging.Formatter):
     milliseconds = self._record.relativeCreated - self._last.relativeCreated
     if milliseconds > self._interval:
       timeLine = f'\x20\x20─── {timedelta(milliseconds=milliseconds)} elapsed'
-      timeLine = sgr(timeLine, cfg.colors['time'])
+      timeLine = screen.sgr(timeLine, cfg.colors['time'])
     else:
       timeLine = None
