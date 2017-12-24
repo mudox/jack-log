@@ -61,6 +61,20 @@ class _Settings:
     else:
       self.symbolWidth = d
 
+    # sessionTimeLinePadding
+    v, d = self._valueAt('sessionTimeLinePadding')
+    if isinstance(v, int) and v > 0:
+      self.sessionTimeLinePadding = v
+    else:
+      self.sessionTimeLinePadding = d
+
+    # logTimeLinePadding
+    v, d = self._valueAt('logTimeLinePadding')
+    if isinstance(v, int) and v > 0:
+      self.logTimeLinePadding = v
+    else:
+      self.logTimeLinePadding = d
+
   def _valueAt(self, *paths):
     u = _get(self.userConfig, *paths)
     d = _get(self.defaultConfig, *paths)

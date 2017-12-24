@@ -1,6 +1,8 @@
 version: 1
 
 margin: 1
+sessionTimeLinePadding : 4
+logTimeLinePadding     : 1
 
 symbols:
 
