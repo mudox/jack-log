@@ -8,67 +8,105 @@ from ruamel.yaml import YAML
 from .screen import color2sgr
 
 
-def _get(d, *keyss):
+def _get(d, *paths):
+  """ Query into configuration dictionary, return None on any error
+  usag:
+    _get(d, 'k1.2.k3.k4', 2, 'name')
+  """
   if d is None:
     return None
 
-  if keyss is None:
+  if paths is None:
     return None
 
-  for keys in keyss:
-    if keys is None:
+  for path in paths:
+    if path is None:
       return None
 
-    keys = keys.split('.')
-    for key in keys:
-      d = d.get(key, None)
-      if d is None:
-        return None
+    path = path.split('.')
+    for key in path:
+      try:
+        i = int(key)
+        if i in d:
+          return d[i]
+        else:
+          return None
+
+      except BaseException:
+        d = d.get(key, None)
+        if d is None:
+          return None
 
   return d
 
 
-# config data
-_yaml = YAML()
+class _Settings:
 
-_path = Path('~/.config/jaclog/jaclog.yml').expanduser()
-_path.parent.mkdir(parents=True, exist_ok=True)
-configData = _yaml.load(_path)
+  def __init__(self):
+    self._loadConfigs()
+    self._loadSymbols()
+    self._loadColors()
 
-_path = Path(__file__).parent / 'resources' / 'jaclog.yml'
-defaultConfigData = _yaml.load(_path)
+    # margin
+    v, d = self._valueAt('margin')
+    if isinstance(v, int) and v > 0:
+      self.margin = v
+    else:
+      self.margin = d
 
-del _path
-del _yaml
+    # symbolWidth
+    v, d = self._valueAt('symbols.width')
+    if isinstance(v, int) and v > 0:
+      self.symbolWidth = v
+    else:
+      self.symbolWidth = d
 
-# symbols
+  def _valueAt(self, *paths):
+    u = _get(self.userConfig, *paths)
+    d = _get(self.defaultConfig, *paths)
+    return u, d
 
-_use = _get(configData, 'symbols.use')
-_scheme = _get(configData, 'symbols.schemes', _use)
-_default = _get(defaultConfigData, 'symbols.schemes.nerd')
+  def _loadConfigs(self):
+    yaml = YAML()
 
-symbolWidth = _get(configData, 'symbols.symbolWidth') \
-    or _get(defaultConfigData, 'symbols.symbolWidth')
+    defaultFile = Path(__file__).parent / 'resources' / 'jaclog.yml'
+    self.defaultConfig = yaml.load(defaultFile)
 
-symbols = {}
-for name in _default:
-  symbols[name] = _get(_scheme, name) \
-      or _default[name]
+    userFile = Path('~/.config/jaclog/jaclog.yml').expanduser()
+    userFile.parent.mkdir(parents=True, exist_ok=True)
+    if not userFile.exists():
+      userFile.write_text(defaultFile.read_text())
+    self.userConfig = yaml.load(userFile)
 
-# colors
-_use = _get(configData, 'colors.use')
-_scheme = _get(configData, 'colors.schemes', _use)
-_default = _get(defaultConfigData, 'colors.schemes.basic')
+  def _loadSymbols(self):
+    use = _get(self.userConfig, 'symbols.use')
+    scheme = _get(self.userConfig, 'symbols.schemes', use)
+    default = _get(self.defaultConfig, 'symbols.schemes.default')
 
-colors = {}
-for name in _default:
-  colors[name] = color2sgr(_get(_scheme, name)) \
-      or color2sgr(_default[name])
+    symbols = {}
+    for name in default:
+      v = _get(scheme, name)
+      d = default[name]
 
-del _use
-del _scheme
-del _default
+      if isinstance(v, str):
+        symbols[name] = v[0]
+      else:
+        symbols[name] = d
 
-# margins
+    self.symbols = symbols
 
-margin = 1
+  def _loadColors(self):
+    # colors
+    use = _get(self.userConfig, 'colors.use')
+    scheme = _get(self.userConfig, 'colors.schemes', use)
+    default = _get(self.defaultConfig, 'colors.schemes.default')
+
+    colors = {}
+    for name in default:
+      colors[name] = color2sgr(_get(scheme, name)) \
+          or color2sgr(default[name])
+
+    self.colors = colors
+
+
+settings = _Settings()

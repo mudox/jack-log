@@ -9,7 +9,7 @@ from time import time
 
 from .formatter import Formatter
 from .screen import sgr
-from .settings import colors, margin, symbols, symbolWidth
+from .settings import settings as cfg
 
 __version__ = '1.2'
 
@@ -78,13 +78,13 @@ def configure(
 
 
 def _logSessionLine(logFile, tty, interval, compact):
-  launchSymbol = f'{symbols["launch"]:{symbolWidth}}'
-  launchSymbol = sgr(launchSymbol, colors['launch'])
+  launchSymbol = f'{cfg.symbols["launch"]:{cfg.symbolWidth}}'
+  launchSymbol = sgr(launchSymbol, cfg.colors['launch'])
 
-  timestamp = sgr(str(datetime.now()), colors['time'])
+  timestamp = sgr(str(datetime.now()), cfg.colors['time'])
 
   cmd = basename('\x20'.join(argv))
-  cmd = sgr(cmd, colors['launch'])
+  cmd = sgr(cmd, cfg.colors['launch'])
 
   launchLine = f'\x20{launchSymbol}{timestamp} {cmd}'
   launchLine = f'\n{launchLine}\n\n' if compact else f'\n\n{launchLine}\n\n'
@@ -93,9 +93,9 @@ def _logSessionLine(logFile, tty, interval, compact):
   modifiedTime = getmtime(logFile)
   seconds = time() - modifiedTime
   if seconds > interval:
-    indent = margin + symbolWidth
+    indent = cfg.margin + cfg.symbolWidth
     timeLine = ('·' * indent) + f'[ {timedelta(seconds=seconds)} ]'
-    timeLine = sgr(timeLine, colors['time'])
+    timeLine = sgr(timeLine, cfg.colors['time'])
     timeLine = f'\n{timeLine}\n'
 
     launchLine = f'{timeLine}{launchLine}'
