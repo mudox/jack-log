@@ -122,10 +122,19 @@ class Formatter(logging.Formatter):
     return lines
 
   def _timeLine(self):
-    # time line ?
     milliseconds = self._record.relativeCreated - self._last.relativeCreated
+
     if milliseconds > self._interval:
-      timeLine = f'\x20\x20─── {timedelta(milliseconds=milliseconds)} elapsed'
+      timeLine = "\x20" * cfg.symbolWidth
+      timeLine += f'─── {timedelta(milliseconds=milliseconds)} elapsed'
       timeLine = screen.sgr(timeLine, cfg.colors['time'])
+
+      padding = []
+      for _ in range(settings.logTimeLinePadding):
+        padding += ''
+
+      lines = padding + [timeLine] + padding
+      return '\n'.join(lines)
+
     else:
       timeLine = None
