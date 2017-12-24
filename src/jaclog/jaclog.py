@@ -11,7 +11,7 @@ from .formatter import Formatter
 from .screen import sgr
 from .settings import settings as cfg
 
-__version__ = '1.2'
+__version__ = '1.1'
 
 
 def configure(
