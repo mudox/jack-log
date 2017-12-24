@@ -1,8 +1,10 @@
 version: 1
 
+margin: 1
+
 symbols:
 
-  symbolWidth: 2
+  width: 2
 
   use: nerd
 
