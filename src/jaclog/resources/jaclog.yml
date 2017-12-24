@@ -10,27 +10,47 @@ symbols:
 
   schemes:
 
+    default:
+      error    :       E
+      warning  :       W
+      info     :       I
+      debug    :       D
+
+      error+   :       ·
+      warning+ :       ·
+      info+    :       ·
+      debug+   :       ·
+
+      launch   :       >
+
     nerd:
-      error   : 
-      warning : 
-      info    : 
-      debug   : 
-      launch  : 
+      error    :       
+      warning  :       
+      info     :       
+      debug    :       
+
+      error+   :       ·
+      warning+ :       ·
+      info+    :       ·
+      debug+   :       ·
+
+      launch   :       
 
     emoji:
-      error   : 😡
-      warning : 👿
-      info    : 💡
-      debug   : 🌱
-      launch  : 🚀
+      error    :      😡
+      warning  :      👿
+      info     :      💡
+      debug    :      🌱
+
+      launch   :      🚀
 
 colors:
 
-  use: basic
+  use: jack
 
   schemes:
 
-    basic:
+    default:
       error   : red
       warning : magenta
       info    : yellow
@@ -39,7 +59,7 @@ colors:
       time    : 242
       file    : 242
 
-    colorful:
+    jack:
       error   : 200, 0, 0
       warning : 255, 87, 191
       info    : 255, 224, 102
@@ -47,4 +67,3 @@ colors:
       launch  : 33
       time    : 242
       file    : 242
-
