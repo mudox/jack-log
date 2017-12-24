@@ -77,6 +77,28 @@ def configure(
       compact=compact)
 
 
+def _sessionTimeLine(logFile, interval):
+  # time separator
+  mtime = getmtime(logFile)
+  seconds = time() - mtime
+
+  if seconds > interval:
+    indent = cfg.margin + cfg.symbolWidth
+    timeLine = ('·' * indent) + f'[ {timedelta(seconds=seconds)} ]'
+    timeLine = sgr(timeLine, cfg.colors['time'])
+    timeLine = f'{timeLine}'
+
+    padding = []
+    for _ in range(cfg.sessionTimeLinePadding):
+      padding.append('')
+
+    lines = padding + [timeLine] + padding
+    return '\n'.join(lines)
+
+  else:
+    return None
+
+
 def _logSessionLine(logFile, tty, interval, compact):
   launchSymbol = f'{cfg.symbols["launch"]:{cfg.symbolWidth}}'
   launchSymbol = sgr(launchSymbol, cfg.colors['launch'])
@@ -89,16 +111,8 @@ def _logSessionLine(logFile, tty, interval, compact):
   launchLine = f'\x20{launchSymbol}{timestamp} {cmd}'
   launchLine = f'\n{launchLine}\n\n' if compact else f'\n\n{launchLine}\n\n'
 
-  # time separator
-  modifiedTime = getmtime(logFile)
-  seconds = time() - modifiedTime
-  if seconds > interval:
-    indent = cfg.margin + cfg.symbolWidth
-    timeLine = ('·' * indent) + f'[ {timedelta(seconds=seconds)} ]'
-    timeLine = sgr(timeLine, cfg.colors['time'])
-    timeLine = f'\n{timeLine}\n'
-
-    launchLine = f'{timeLine}{launchLine}'
+  timeLine = _sessionTimeLine(logFile, interval)
+  launchLine = f'{timeLine or ""}{launchLine}'
 
   launchLine = f'\x1b[38;5;242m{launchLine}\x1b[0m'
   with logFile.open('a') as file:
