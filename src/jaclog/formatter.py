@@ -3,6 +3,7 @@
 import logging
 import textwrap
 from datetime import timedelta
+from datetime import datetime
 from typing import NamedTuple
 
 from . import screen
@@ -17,7 +18,7 @@ class _Last(NamedTuple):
 
 class Formatter(logging.Formatter):
 
-  def __init__(self, compact, interval=2000):
+  def __init__(self, compact=True, interval=2000):
     super().__init__()
 
     self._compact = compact
@@ -94,14 +95,16 @@ class Formatter(logging.Formatter):
     headLine = self._head
     message = textwrap.indent(self._message, '\x20' * cfg.symbolWidth)
 
+    timeLine = self._timeLine()
+
     if self._isContinued:
-      if self._timeLine is not None:
-        lines = f'\n{self._timeLine}\n\n{message}'
+      if timeLine is not None:
+        lines = f'\n{timeLine}\n\n{message}'
       else:
         lines = f'\n{message}'
     else:
-      if self._timeLine is not None:
-        lines = f'\n{self._timeLine}\n\n{headLine}\n{message}'
+      if timeLine is not None:
+        lines = f'\n{timeLine}\n\n{headLine}\n{message}'
       else:
         lines = f'\n{headLine}\n{message}'
 
@@ -119,6 +122,10 @@ class Formatter(logging.Formatter):
       else:
         lines = f'{self._head}\n{message}'
 
+    timeLine = self._timeLine()
+    if timeLine is not None:
+      lines = f'{timeLine}\n{lines}'
+
     return lines
 
   def _timeLine(self):
@@ -126,11 +133,11 @@ class Formatter(logging.Formatter):
 
     if milliseconds > self._interval:
       timeLine = "\x20" * cfg.symbolWidth
-      timeLine += f'─── {timedelta(milliseconds=milliseconds)} elapsed'
+      timeLine += f'\n {datetime.now()} ── {timedelta(milliseconds=milliseconds)} elapsed'
       timeLine = screen.sgr(timeLine, cfg.colors['time'])
 
       padding = []
-      for _ in range(settings.logTimeLinePadding):
+      for _ in range(cfg.logTimeLinePadding):
         padding += ''
 
       lines = padding + [timeLine] + padding
