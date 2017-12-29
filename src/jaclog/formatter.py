@@ -2,9 +2,9 @@
 
 import logging
 import textwrap
-from datetime import timedelta
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import NamedTuple
+import re
 
 from . import screen
 from .settings import settings as cfg
@@ -16,6 +16,9 @@ class _Last(NamedTuple):
   relativeCreated: int  # in milliseconds
 
 
+_mlinePattern = re.compile(r'^m:\n(.*)\n[ \t]*$', re.DOTALL)
+
+
 class Formatter(logging.Formatter):
 
   def __init__(self, compact=True, interval=2000):
@@ -24,11 +27,7 @@ class Formatter(logging.Formatter):
     self._compact = compact
     self._interval = interval
 
-    self._last = _Last(
-        subsystem='',
-        fileFunc='',
-        relativeCreated=0
-    )
+    self._last = _Last(subsystem='', fileFunc='', relativeCreated=0)
 
   def _symbol(self):
     return cfg.symbols[self._record.levelname.lower()]
@@ -66,9 +65,13 @@ class Formatter(logging.Formatter):
     self._head = f'{head1} {head2}'
 
     # self._message
-    self._message = super().format(record).strip()
+    self._message = super().format(record)
 
-    # self._inOneLine
+    # handle `m:` prefix
+    self._mline()
+
+    # handle `o:` prefix
+    # set result into self._inOneLine
     if self._message.startswith('o:'):
       self._inOneLine = True
       self._message = self._message[2:]
@@ -84,8 +87,7 @@ class Formatter(logging.Formatter):
     self._last = _Last(
         subsystem=self._subsystem(),
         fileFunc=self._fileFunc(),
-        relativeCreated=record.relativeCreated
-    )
+        relativeCreated=record.relativeCreated)
 
     # indent 1 space for the sake of aesthetic
     lines = textwrap.indent(lines, '\x20' * cfg.margin)
@@ -117,7 +119,8 @@ class Formatter(logging.Formatter):
       lines = f'{self._head}\x20{message[cfg.symbolWidth:]}'
     else:
       if self._isContinued:
-        message = screen.sgr(f'{self._continuedSymbol()}\x20', self._symbolColor()) + message[2:]
+        message = screen.sgr(f'{self._continuedSymbol()}\x20',
+                             self._symbolColor()) + message[2:]
         lines = message
       else:
         lines = f'{self._head}\n{message}'
@@ -145,3 +148,8 @@ class Formatter(logging.Formatter):
 
     else:
       timeLine = None
+
+  def _mline(self):
+    m = _mlinePattern.match(self._message)
+    if m is not None:
+      self._message = textwrap.dedent(m.group(1))
