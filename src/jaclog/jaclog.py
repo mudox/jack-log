@@ -14,14 +14,16 @@ from .settings import settings as cfg
 __version__ = '1.1'
 
 
+handlers = []
+
+
 def configure(
-    appName,
-    fileName=None,
-    logTTY=None,
+    *,
     compact=True,
     eventInterval=2000,
     sessionInterval=5,
-    wrap=None
+    printSessionLine=True,
+    **kargs,
 ):
   """ Configure logging system.
 
@@ -33,8 +35,7 @@ def configure(
     fileName (str): the name of log file that will be created, defaults to
       `{appName}.log`
 
-    tty (Path or str): specified tty file to log directly to the corresponding
-      terminal.
+    extraFiles: (list): list of paths of other log files, e.g. tty path.
 
     compact (bool): compact relayout mode, less separating empty lines,
       defaults to False.
@@ -46,35 +47,51 @@ def configure(
       defaults to 5s.
 
     wrap (int): textwrap maximum width, default to not wrap text.
+
+  Return: All configured log files as path str in a list.
   """
 
-  if fileName is None:
-    fileName = f'{appName}.log'
+  appName = kargs.get('appName', None)
+  fileName = kargs.get('fileName', None)
+  extraFiles = kargs.get('extraFiles', [])
 
   rootLogger = logging.getLogger()
   rootLogger.setLevel(logging.NOTSET)
+  for h in handlers:
+    rootLogger.removeHandler(h)
 
   # log to file
-  logFile = Path(f'~/.local/share/{appName}/log/{fileName}').expanduser()
-  logFile.parent.mkdir(parents=True, exist_ok=True)
-  if not logFile.exists():  # avoid change mtime if file exists
-    logFile.touch(exist_ok=True)
+  if appName is not None:
 
-  logToFile = logging.FileHandler(logFile)
-  logToFile.setFormatter(Formatter(compact, eventInterval))
-  rootLogger.addHandler(logToFile)
+    if fileName is None:
+      fileName = f'{appName}.log'
 
-  # log to tty if any
-  if logTTY is not None:
-    logToTTY = logging.FileHandler(logTTY)
-    logToTTY.setFormatter(Formatter(compact, eventInterval))
-    rootLogger.addHandler(logToTTY)
+    logFile = Path(f'~/.local/share/{appName}/log/{fileName}').expanduser()
 
-  _logSessionLine(
-      logFile,
-      logTTY,
-      interval=sessionInterval,
-      compact=compact)
+    logFile.parent.mkdir(parents=True, exist_ok=True)
+    if not logFile.exists():  # avoid change mtime if file exists
+      logFile.touch(exist_ok=True)
+
+    handler = logging.FileHandler(logFile)
+    handler.setFormatter(Formatter(compact, eventInterval))
+    rootLogger.addHandler(handler)
+    handlers.append(handler)
+
+  for p in extraFiles:
+    filePath = Path(str(p)).expanduser()
+
+    filePath.parent.mkdir(parents=True, exist_ok=True)
+
+    handler = logging.FileHandler(filePath)
+    handler.setFormatter(Formatter(compact, eventInterval))
+    rootLogger.addHandler(handler)
+    handlers.append(handler)
+
+  if printSessionLine:
+    _logSessionLine(
+        [logFile] + extraFiles,
+        interval=sessionInterval,
+        compact=compact)
 
 
 def _sessionTimeLine(logFile, interval):
@@ -99,7 +116,7 @@ def _sessionTimeLine(logFile, interval):
     return None
 
 
-def _logSessionLine(logFile, tty, interval, compact):
+def _logSessionLine(files, interval, compact):
   launchSymbol = f'{cfg.symbols["launch"]:{cfg.symbolWidth}}'
   launchSymbol = sgr(launchSymbol, cfg.colors['launch'])
 
@@ -111,20 +128,11 @@ def _logSessionLine(logFile, tty, interval, compact):
   launchLine = f'\x20{launchSymbol}{timestamp} {cmd}'
   launchLine = f'\n{launchLine}\n\n' if compact else f'\n\n{launchLine}\n\n'
 
-  timeLine = _sessionTimeLine(logFile, interval)
+  timeLine = _sessionTimeLine(files[0], interval)
   launchLine = f'{timeLine or ""}{launchLine}'
 
   launchLine = f'\x1b[38;5;242m{launchLine}\x1b[0m'
-  with logFile.open('a') as file:
-    file.write(launchLine)
 
-  if tty is not None:
-    if isinstance(tty, Path):
-      with tty.open('a') as file:
-        file.write(launchLine)
-    elif isinstance(tty, str):
-      with open(tty, 'a') as file:
-        file.write(launchLine)
-    else:
-      raise RuntimeError(
-          'argument `tty` must be either of type `Path` or `str`')
+  for f in files:
+    with open(f, 'a') as file:
+      file.write(launchLine)

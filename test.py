@@ -53,7 +53,7 @@ try:
 
     dice = random.choices(
         ['bare one liner', 'multiline one liner', 'normal'],
-        weights=[2, 5, 7]
+        weights=[2, 5, 7],
     )[0]
 
     if continued:

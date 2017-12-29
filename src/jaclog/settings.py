@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from pathlib import Path
 
 from ruamel.yaml import YAML
